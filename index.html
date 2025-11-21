@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Quiz Portal — School</title>
+<style>
+  :root{
+    --primary:#1565c0;
+    --muted:#666;
+    --card:#fff;
+    --bg:#f3f6fb;
+    --accent:#00a86b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:var(--bg);color:#111}
+  .wrap{max-width:920px;margin:10px auto;padding:12px}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+  h1{font-size:20px;margin:0}
+  .muted{color:var(--muted);font-size:13px}
+  .card{background:var(--card);border-radius:12px;padding:12px;margin:12px 0;box-shadow:0 6px 18px rgba(8,35,63,0.06)}
+  .row{display:flex;gap:8px}
+  .col{flex:1}
+  input,select,textarea,button{font-size:15px}
+  input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e3e8ef;margin:6px 0}
+  button{background:var(--primary);color:#fff;border:0;padding:10px 12px;border-radius:8px;font-weight:600;cursor:pointer}
+  .btn-ghost{background:transparent;color:var(--primary);border:1px solid rgba(21,101,192,0.12)}
+  .btn-danger{background:#e53935}
+  .hidden{display:none}
+  .center{text-align:center}
+  .list-item{padding:10px;border-radius:10px;border:1px dashed #e8eef8;margin:8px 0;display:flex;justify-content:space-between;align-items:center}
+  label.small{font-size:13px;color:var(--muted)}
+  footer{font-size:12px;color:var(--muted);text-align:center;margin:20px 0}
+  /* responsive */
+  @media(max-width:700px){ .row{flex-direction:column} .wrap{padding:8px} h1{font-size:18px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>School Quiz Portal</h1>
+      <div class="muted">Teacher & Student panels • Mobile friendly</div>
+    </div>
+    <div id="topRightInfo" class="muted">Not logged</div>
+  </header>
+
+  <!-- LOGIN -->
+  <div id="loginView" class="card">
+    <h2 class="center">Login</h2>
+    <div style="max-width:420px;margin:auto">
+      <input id="loginUser" placeholder="Username (teacher / student)">
+      <input id="loginPass" placeholder="Password" type="password">
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+        <button onclick="doLogin()">Login</button>
+        <button class="btn-ghost" onclick="showPublic()">Browse</button>
+      </div>
+      <div style="margin-top:8px" class="muted small center">Teacher default: <b>teacher / 1234</b> • Student default: <b>student / 0000</b></div>
+    </div>
+  </div>
+
+  <!-- PUBLIC (browse quizzes) -->
+  <div id="publicView" class="card hidden">
+    <h3 class="center">Available Quizzes (Preview)</h3>
+    <div id="publicList"></div>
+    <div class="center" style="margin-top:10px">
+      <button class="btn-ghost" onclick="showLogin()">Back to Login</button>
+    </div>
+  </div>
+
+  <!-- TEACHER DASHBOARD -->
+  <div id="teacherView" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h2>Teacher Dashboard</h2>
+      <div>
+        <button class="btn-ghost" onclick="openChangePin()">Change PIN</button>
+        <button onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Create / Edit Quiz</h3>
+      <input id="quizTitle" placeholder="Quiz title (e.g. Maths Chap 1)">
+      <div class="row">
+        <input id="quizTime" placeholder="Time limit (minutes) - optional">
+        <input id="quizPass" placeholder="Passing marks - optional">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="saveQuiz()">Save Quiz</button>
+        <button class="btn-ghost" onclick="clearQuizForm()">Clear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Add Question to Quiz</h3>
+      <select id="selectQuizForQuestion"><option value="">-- Select Quiz --</option></select>
+      <input id="qText" placeholder="Question text">
+      <div class="row">
+        <input id="o1" placeholder="Option 1">
+        <input id="o2" placeholder="Option 2">
+      </div>
+      <div class="row">
+        <input id="o3" placeholder="Option 3">
+        <input id="o4" placeholder="Option 4">
+      </div>
+      <select id="correctOpt"><option value="">Select correct option</option><option value="1">Option 1</option><option value="2">Option 2</option><option value="3">Option 3</option><option value="4">Option 4</option></select>
+      <div style="display:flex;gap:8px">
+        <button onclick="addQuestion()">Add Question</button>
+        <button class="btn-ghost" onclick="clearQuestionForm()">Clear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>All Quizzes</h3>
+      <div id="quizList"></div>
+    </div>
+
+    <div class="card">
+      <h3>Student Submissions (All)</h3>
+      <div id="submissionsList"></div>
+    </div>
+  </div>
+
+  <!-- STUDENT DASHBOARD -->
+  <div id="studentView" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>Student Area</h2>
+      <div>
+        <button class="btn-ghost" onclick="viewMyHistory()">My Results</button>
+        <button onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Choose Quiz</h3>
+      <select id="studentQuizSelect" onchange="prepareQuizPlay()"><option value="">-- Select --</option></select>
+      <div id="selectedQuizInfo" class="muted small"></div>
+    </div>
+
+    <div id="playCard" class="card hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 id="playTitle"></h3>
+        <div id="timerBadge" class="muted small"></div>
+      </div>
+      <div id="playQuestions"></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+        <button onclick="submitStudentQuiz()">Submit</button>
+      </div>
+    </div>
+
+    <div id="historyCard" class="card hidden">
+      <h3>My Submissions</h3>
+      <div id="myHistoryList"></div>
+      <div style="text-align:center;margin-top:10px"><button class="btn-ghost" onclick="hideMyHistory()">Close</button></div>
+    </div>
+  </div>
+
+  <footer>Made for school quizzes • Data saved on device. For cloud sync ask me and I'll add Google Sheets / Firebase integration.</footer>
+</div>
+
+<!-- CHANGE PIN MODAL (simple) -->
+<div id="pinModal" class="card hidden" style="position:fixed;left:10px;right:10px;top:20px;z-index:30;">
+  <h3>Change Teacher PIN</h3>
+  <input id="oldPin" placeholder="Old PIN">
+  <input id="newPin" placeholder="New PIN">
+  <div style="display:flex;gap:8px">
+    <button onclick="changePin()">Change</button>
+    <button class="btn-ghost" onclick="closeChangePin()">Cancel</button>
+  </div>
+</div>
+
+<script>
+/* ====== Simple DB in localStorage ====== */
+const STORAGE_KEY = 'SCHOOL_QUIZ_DB_v1';
+function loadDB(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw) {
+    const init = { quizzes: [], submissions: [], teacherPin: '1234' };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(init));
+    return init;
+  }
+  return JSON.parse(raw);
+}
+function saveDB(db){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+
+let DB = loadDB();
+
+/* ====== Helpers ====== */
+const el = id => document.getElementById(id);
+const uid = () => 'id'+Math.random().toString(36).slice(2,9);
+function show(elId){ el(elId).classList.remove('hidden'); }
+function hide(elId){ el(elId).classList.add('hidden'); }
+
+/* ====== AUTH / UI flow ====== */
+function doLogin(){
+  const u = el('loginUser').value.trim();
+  const p = el('loginPass').value.trim();
+  if(u === 'teacher' && p === DB.teacherPin){
+    localStorage.setItem('role','teacher');
+    updateTopInfo('Teacher');
+    openTeacher();
+  } else if(u === 'student' && p === '0000'){
+    localStorage.setItem('role','student');
+    updateTopInfo('Student');
+    openStudent();
+  } else {
+    alert('Invalid credentials');
+  }
+}
+function logout(){
+  localStorage.removeItem('role');
+  updateTopInfo('Not logged');
+  // reload UI
+  hide('teacherView'); hide('studentView'); hide('pinModal'); hide('playCard'); hide('historyCard');
+  el('loginUser').value=''; el('loginPass').value='';
+  show('loginView');
+}
+function showPublic(){ renderPublicList(); hide('loginView'); show('publicView'); }
+function showLogin(){ hide('publicView'); show('loginView'); }
+function updateTopInfo(text){ el('topRightInfo').innerText = text }
+
+/* ====== Teacher view ====== */
+function openTeacher(){
+  hide('loginView'); hide('publicView');
+  show('teacherView'); hide('studentView');
+  updateTopInfo('Teacher');
+  refreshQuizSelects();
+  renderQuizList();
+  renderSubmissions();
+}
+function openStudent(){
+  hide('loginView'); hide('publicView');
+  hide('teacherView'); show('studentView');
+  updateTopInfo('Student');
+  refreshQuizSelects();
+  renderStudentSelects();
+}
+
+/* ====== PIN change modal ====== */
+function openChangePin(){ el('pinModal').classList.remove('hidden'); el('oldPin').value=''; el('newPin').value=''; }
+function closeChangePin(){ el('pinModal').classList.add('hidden'); }
+function changePin(){
+  if(el('oldPin').value !== DB.teacherPin) return alert('Old PIN incorrect');
+  if(!el('newPin').value) return alert('Enter new PIN');
+  DB.teacherPin = el('newPin').value;
+  saveDB(DB);
+  alert('PIN changed');
+  closeChangePin();
+}
+
+/* ====== Quiz CRUD ====== */
+function refreshQuizSelects(){
+  const sel = el('selectQuizForQuestion');
+  const sel2 = el('studentQuizSelect');
+  const pub = el('publicList');
+  sel.innerHTML = '<option value="">-- Select Quiz --</option>';
+  sel2.innerHTML = '<option value="">-- Select --</option>';
+  pub && (pub.innerHTML = '');
+  DB.quizzes.forEach(q=>{
+    sel.innerHTML += `<option value="${q.id}">${q.title}</option>`;
+    sel2.innerHTML += `<option value="${q.id}">${q.title}</option>`;
+    pub && (pub.innerHTML += `<div class="list-item"><div><strong>${q.title}</strong><div class="muted small">${(q.desc||'')}</div></div><div><span class="muted small">${q.questions? q.questions.length:0} Qs</span></div></div>`);
+  });
+}
+function saveQuiz(){
+  const title = el('quizTitle').value.trim();
+  if(!title) return alert('Enter title');
+  const q = { id: uid(), title, desc: '', time: parseInt(el('quizTime').value) || null, pass: parseInt(el('quizPass').value) || null, questions: [] };
+  DB.quizzes.push(q);
+  saveDB(DB);
+  el('quizTitle').value=''; el('quizTime').value=''; el('quizPass').value='';
+  refreshQuizSelects(); renderQuizList();
+  alert('Quiz saved');
+}
+function clearQuizForm(){ el('quizTitle').value=''; el('quizTime').value=''; el('quizPass').value=''; }
+
+/* ====== Questions ====== */
+function addQuestion(){
+  const qid = el('selectQuizForQuestion').value;
+  if(!qid) return alert('Select a quiz first');
+  const text = el('qText').value.trim();
+  const opts = [el('o1').value.trim(), el('o2').value.trim(), el('o3').value.trim(), el('o4').value.trim()];
+  const correct = parseInt(el('correctOpt').value) || null;
+  if(!text || opts.some(o=>!o) || !correct) return alert('Fill all question fields and choose correct option');
+  const quiz = DB.quizzes.find(x=>x.id===qid);
+  const question = { id: uid(), text, opts, correct };
+  quiz.questions.push(question);
+  saveDB(DB);
+  el('qText').value=''; el('o1').value=''; el('o2').value=''; el('o3').value=''; el('o4').value=''; el('correctOpt').value='';
+  renderQuizList();
+  alert('Question added');
+}
+
+/* ====== Render lists for teacher ====== */
+function renderQuizList(){
+  const dest = el('quizList'); dest.innerHTML = '';
+  if(DB.quizzes.length===0) dest.innerHTML = '<div class="muted small">No quizzes yet</div>';
+  DB.quizzes.forEach(q=>{
+    const wrapper = document.createElement('div'); wrapper.className='card';
+    let html = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${q.title}</strong><div class="muted small">${q.time? q.time+' min':''} ${(q.pass)? ' • pass: '+q.pass:''}</div></div><div style="display:flex;gap:8px"><button class="btn-ghost" onclick="openQuizEditor('${q.id}')">Edit</button><button class="btn-ghost" onclick="exportQuiz('${q.id}')">Export</button><button class="btn-danger" onclick="deleteQuiz('${q.id}')">Delete</button></div></div>`; 
+    html += `<div style="margin-top:8px"><strong>Questions:</strong>`;
+    if(q.questions && q.questions.length) {
+      q.questions.forEach((ques,i)=>{
+        html += `<div style="margin-top:8px;padding:8px;border-radius:8px;border:1px solid #eee"><div style="font-weight:700">${i+1}. ${ques.text}</div><div class="muted small">Options: ${ques.opts.join(' | ')} • Correct: ${ques.correct}</div><div style="margin-top:6px"><button class="btn-ghost" onclick="deleteQuestion('${q.id}','${ques.id}')">Delete</button></div></div>`;
+      });
+    } else html += `<div class="muted small">No questions added</div>`;
+    html += `</div>`;
+    wrapper.innerHTML = html;
+    dest.appendChild(wrapper);
+  });
+}
+
+function openQuizEditor(id){
+  const q = DB.quizzes.find(x=>x.id===id);
+  if(!q) return alert('Not found');
+  el('quizTitle').value = q.title; el('quizTime').value = q.time || ''; el('quizPass').value = q.pass || '';
+  // Load questions in select for adding more
+  el('selectQuizForQuestion').value = q.id;
+  alert('Loaded quiz into creation form for quick editing. To change title save as new quiz (simple UX).');
+}
+
+function deleteQuiz(id){
+  if(!confirm('Delete quiz?')) return;
+  DB.quizzes = DB.quizzes.filter(x=>x.id!==id);
+  DB.submissions = DB.submissions.filter(s=>s.quizId!==id);
+  saveDB(DB);
+  refreshQuizSelects(); renderQuizList(); renderSubmissions();
+}
+
+function deleteQuestion(quizId,qid){
+  if(!confirm('Delete question?')) return;
+  const q = DB.quizzes.find(x=>x.id===quizId);
+  if(!q) return;
+  q.questions = q.questions.filter(x=>x.id!==qid);
+  saveDB(DB); renderQuizList();
+}
+
+function exportQuiz(id){
+  const q = DB.quizzes.find(x=>x.id===id);
+  if(!q) return alert('Not found');
+  prompt('Copy this JSON (backup)', JSON.stringify(q));
+}
+
+/* ====== Submissions & history ====== */
+function renderSubmissions(){
+  const dest = el('submissionsList'); dest.innerHTML = '';
+  if(!DB.submissions || DB.submissions.length===0) { dest.innerHTML = '<div class="muted small">No submissions yet</div>'; return; }
+  DB.submissions.slice().reverse().forEach(s=>{
+    const q = DB.quizzes.find(x=>x.id===s.quizId);
+    const div = document.createElement('div'); div.className='list-item';
+    div.innerHTML = `<div><strong>${s.studentName}</strong><div class="muted small">${q? q.title : 'Quiz removed'}</div></div><div class="muted small">${s.score}/${s.total} • ${new Date(s.date).toLocaleString()}</div>`;
+    dest.appendChild(div);
+  });
+}
+
+/* ====== Public listing ====== */
+function renderPublicList(){
+  const pub = el('publicList'); pub.innerHTML = '';
+  if(DB.quizzes.length===0) pub.innerHTML = '<div class="muted small center">No quizzes</div>';
+  DB.quizzes.forEach(q=>{
+    pub.innerHTML += `<div class="list-item"><div><strong>${q.title}</strong><div class="muted small">${(q.desc||'')}</div></div><div class="muted small">${q.questions? q.questions.length:0} Qs</div></div>`;
+  });
+}
+
+/* ====== Student flow ====== */
+function renderStudentSelects(){ /* kept for future extension if needed */ }
+function prepareQuizPlay(){
+  const qid = el('studentQuizSelect').value;
+  if(!qid){ hide('playCard'); return; }
+  const quiz = DB.quizzes.find(x=>x.id===qid);
+  if(!quiz) return alert('Quiz not found');
+  el('playTitle').innerText = quiz.title;
+  el('selectedQuizInfo').innerText = quiz.desc || '';
+  const box = el('playQuestions'); box.innerHTML = '';
+  quiz.questions.forEach((ques,i)=>{
+    const html = document.createElement('div');
+    html.innerHTML = `<div style="margin-bottom:10px"><div style="font-weight:700">${i+1}. ${ques.text}</div>
+      <div style="margin-top:6px">
+        ${ques.opts.map((opt,idx)=>`<label style="display:block;margin-top:6px"><input type="radio" name="q_${ques.id}" value="${idx+1}"> ${opt}</label>`).join('')}
+      </div></div>`;
+    box.appendChild(html);
+  });
+  // Timer
+  if(quiz.time && !isNaN(quiz.time) && quiz.time>0){
+    startTimer(quiz.time*60);
+  } else {
+    el('timerBadge').innerText = '';
+    if(window.playTimer) { clearInterval(window.playTimer); window.playTimer = null; }
+  }
+  show('playCard'); hide('historyCard'); hide('myHistoryList');
+}
+
+/* Timer helper */
+function startTimer(seconds){
+  if(window.playTimer) clearInterval(window.playTimer);
+  window.timeLeft = seconds;
+  el('timerBadge').innerText = formatTime(window.timeLeft);
+  window.playTimer = setInterval(()=> {
+    window.timeLeft--;
+    if(window.timeLeft<=0){ clearInterval(window.playTimer); window.playTimer=null; el('timerBadge').innerText='Time up'; alert('Time up — submitting'); submitStudentQuiz(); }
+    else el('timerBadge').innerText = formatTime(window.timeLeft);
+  },1000);
+}
+function formatTime(s){
+  const m = Math.floor(s/60); const sec = s%60; return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+/* Submit student quiz */
+function submitStudentQuiz(){
+  const qid = el('studentQuizSelect').value;
+  if(!qid) return alert('Select quiz');
+  const quiz = DB.quizzes.find(x=>x.id===qid);
+  const studentName = prompt('Enter your name (will be saved with result)') || 'Student';
+  let score = 0;
+  quiz.questions.forEach(q=>{
+    const sel = document.querySelector(`input[name="q_${q.id}"]:checked`);
+    const ans = sel ? parseInt(sel.value) : null;
+    if(ans === q.correct) score++;
+  });
+  const submission = { id: uid(), quizId: qid, studentName, score, total: quiz.questions.length, date: Date.now() };
+  DB.submissions = DB.submissions || [];
+  DB.submissions.push(submission);
+  saveDB(DB);
+  if(window.playTimer){ clearInterval(window.playTimer); window.playTimer=null; }
+  el('resultText').innerText = `Name: ${studentName} • Score: ${score} / ${quiz.questions.length}`;
+  show('resultBox');
+  // update teacher view
+  renderSubmissions(); refreshQuizSelects();
+  // update leaderboard (persisted in DB.submissions)
+}
+
+/* My history */
+function viewMyHistory(){
+  const me = prompt('Enter your name to view results (same name used while submitting)') || '';
+  if(!me) return;
+  const list = DB.submissions.filter(s=>s.studentName===me);
+  const dest = el('myHistoryList'); dest.innerHTML = '';
+  if(list.length===0) dest.innerHTML = '<div class="muted small">No results for this name</div>';
+  list.forEach(s=>{
+    const quiz = DB.quizzes.find(x=>x.id===s.quizId);
+    dest.innerHTML += `<div class="list-item"><div><strong>${quiz?quiz.title:'quiz removed'}</strong><div class="muted small">${new Date(s.date).toLocaleString()}</div></div><div class="muted small">${s.score}/${s.total}</div></div>`;
+  });
+  show('historyCard');
+}
+function hideMyHistory(){ hide('historyCard'); }
+
+/* Auto-open if role saved */
+const storedRole = localStorage.getItem('role');
+if(storedRole === 'teacher') { updateTopInfo('Teacher'); openTeacher(); }
+else if(storedRole === 'student') { updateTopInfo('Student'); openStudent(); }
+else { updateTopInfo('Not logged'); show('loginView'); }
+
+/* Helper: view my results quick */
+function viewMyResults(){ viewMyHistory(); }
+
+</script>
+</body>
+  </html>
